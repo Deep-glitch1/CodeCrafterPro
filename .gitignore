@@ -1,0 +1,9 @@
+# Documentation files
+*.md
+IMPLEMENTATION_SUMMARY.md
+QUICKSTART_EXAMPLES.md
+TRANSLATOR_ARCHITECTURE.md
+TRANSLATOR_GUIDE.md
+
+# Test files
+test-ast.html
