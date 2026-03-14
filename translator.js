@@ -90,13 +90,15 @@ class CodeTranslator {
             'maano $2 = 0');
 
         // Convert printf statements (printf("text", var); -> likho "text" + var)
-        customCode = customCode.replace(/printf\s*\(\s*"([^"]*)"\s*,\s*([^)]+)\s*\)/g, 
+        customCode = customCode.replace(/printf\s*\(\s*"([^"]*)"\s*,\s*([^)]+)\s*\)\s*;?/g, 
             'likho "$1 " + $2');
-        customCode = customCode.replace(/printf\s*\(\s*"([^"]*)"\s*\)/g, 
+        customCode = customCode.replace(/printf\s*\(\s*"([^"]*)"\s*\)\s*;?/g, 
             'likho "$1"');
 
-        // Remove semicolons after likho statements
-        customCode = customCode.replace(/likho\s+(.+?);/g, 'likho $1');
+        // Ensure likho statements don't have semicolons (remove if present)
+        customCode = customCode.replace(/likho\s+(.+?);\s*/g, 'likho $1\n');
+        // Ensure likho statements end with newline if not already
+        customCode = customCode.replace(/likho\s+([^\n;]+)(?![\n;])/g, 'likho $1\n');
 
         // Convert scanf to likho (user input simulation)
         customCode = customCode.replace(/scanf\s*\([^)]+\)/g, 

@@ -107,9 +107,6 @@ class TranslationUIManager {
                                         <button onclick="translationUIManager.switchTab('parsing')" class="translationTab px-4 py-2 text-gray-300 rounded-t-lg hover:bg-purple-600/30 transition font-semibold">
                                             <i class="fas fa-sitemap mr-2"></i>Parsing
                                         </button>
-                                        <button onclick="translationUIManager.switchTab('interpretation')" class="translationTab px-4 py-2 text-gray-300 rounded-t-lg hover:bg-purple-600/30 transition font-semibold">
-                                            <i class="fas fa-play-circle mr-2"></i>Execution
-                                        </button>
                                         <button onclick="translationUIManager.switchTab('metrics')" class="translationTab px-4 py-2 text-gray-300 rounded-t-lg hover:bg-purple-600/30 transition font-semibold">
                                             <i class="fas fa-chart-bar mr-2"></i>Metrics
                                         </button>
@@ -162,21 +159,6 @@ class TranslationUIManager {
                                             </div>
                                         </div>
                                         <div id="astMetrics" class="grid grid-cols-1 md:grid-cols-4 gap-2"></div>
-                                    </div>
-
-                                    <!-- Interpretation Comparison View -->
-                                    <div id="interpretationComparisonView" class="translationView" style="display: none;">
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                                            <div>
-                                                <h4 class="text-white font-semibold mb-2">Original Language Output</h4>
-                                                <div id="originalOutputDisplay" class="bg-gray-800 rounded p-3 max-h-96 overflow-auto text-green-400 text-sm font-mono"></div>
-                                            </div>
-                                            <div>
-                                                <h4 class="text-white font-semibold mb-2">Custom Language Output</h4>
-                                                <div id="translatedOutputDisplay" class="bg-gray-800 rounded p-3 max-h-96 overflow-auto text-blue-400 text-sm font-mono"></div>
-                                            </div>
-                                        </div>
-                                        <div id="outputComparison" class="bg-gray-800 rounded p-3"></div>
                                     </div>
 
                                     <!-- Metrics View -->
@@ -264,6 +246,8 @@ class TranslationUIManager {
                 // Translate the code
                 const translatedCode = this.translator.translate(sourceCode, sourceLanguage);
                 console.log(`✅ Translation complete, output: ${translatedCode.length} chars`);
+                console.log(`%cTranslated code preview:`, 'color: blue; font-weight: bold');
+                console.log(translatedCode);
 
                 // Capture program input
                 const programInput = document.getElementById('programInputTextarea').value;
@@ -415,22 +399,45 @@ class TranslationUIManager {
             try {
                 // Compile translated code with custom language compiler
                 console.log('%c2️⃣ Compiling translated code...', 'color: blue');
+                console.log('Translated code to compile:');
+                console.log(translatedCode);
                 const compiler = new RealTimeCompiler(CONFIG.CUSTOM_KEYWORDS);
                 translatedResult = compiler.compile(translatedCode);
                 console.log('✅ Compilation complete! Token count:', translatedResult.tokens?.length ?? 0);
+                console.log('✅ AST statements:', translatedResult.ast?.body?.length ?? 0);
+                console.log('✅ Output:', translatedResult.output);
+                console.log('✅ Success:', translatedResult.success);
             } catch (e) {
                 console.error('%c❌ TRANSLATED COMPILATION ERROR', 'color: red; font-weight: bold');
                 console.error('Error message:', e.message);
                 translatedResult = { success: false, error: e.message, tokens: [], ast: null, output: '' };
             }
 
-            // Parse original code - skip complex AST for C/Python to avoid hangs
+            // Parse original code into AST (now with CPythonASTParser)
             try {
-                console.log('%c🔍 Preparing original code...', 'color: blue');
+                console.log('%c🔍 Parsing original code into AST...', 'color: blue');
                 if (originalResult.tokens && originalResult.tokens.length > 0) {
-                    originalResult.ast = null;
-                    originalResult.astTree = `Tokens: ${originalResult.tokens.length}`;
-                    console.log('✅ Original code prepared');
+                    try {
+                        // Use CPythonASTParser to create AST from tokens
+                        const parser = new CPythonASTParser(originalResult.tokens, sourceLanguage);
+                        originalResult.ast = parser.parse();
+                        console.log('✅ Original code parsed into AST');
+                        console.log('Original AST structure:', originalResult.ast);
+                        
+                        // Format as tree for display using CPythonASTFormatter
+                        try {
+                            const formatter = new CPythonASTFormatter();
+                            originalResult.astTree = formatter.formatAsTree(originalResult.ast, sourceLanguage);
+                            console.log('✅ Original code AST formatted as tree');
+                        } catch (formatError) {
+                            console.warn('⚠️ AST tree formatting error:', formatError.message);
+                            originalResult.astTree = JSON.stringify(originalResult.ast, null, 2);
+                        }
+                    } catch (parseError) {
+                        console.warn('⚠️ CPythonASTParser error:', parseError.message);
+                        originalResult.ast = null;
+                        originalResult.astTree = `Failed to parse: ${parseError.message}`;
+                    }
                 } else {
                     originalResult.ast = null;
                 }
@@ -494,9 +501,6 @@ class TranslationUIManager {
             
             this.displayParsingComparison(originalResult, translatedResult);
             console.log('✅ Parsing display complete');
-            
-            this.displayInterpretationComparison(originalResult, translatedResult);
-            console.log('✅ Interpretation display complete');
             
             this.displayMetrics(originalCode, translatedCode);
             console.log('✅ Metrics display complete');
@@ -653,12 +657,12 @@ class TranslationUIManager {
             // Check for astTree first (used for token counts), then fall back to AST
             if (originalResult?.astTree) {
                 originalASTString = originalResult.astTree;
-                console.log('✅ Original astTree display (token count)');
+                console.log('✅ Original astTree display');
             } else if (originalAST) {
                 try {
-                    // Generate tree format from AST
-                    const astBuilder = new GenericASTBuilder();
-                    originalASTString = astBuilder.formatAsTree(originalAST);
+                    // Use CPythonASTFormatter for better C/Python tree format
+                    const formatter = new CPythonASTFormatter();
+                    originalASTString = formatter.formatAsTree(originalAST, this.currentTranslation?.sourceLanguage || 'c');
                     console.log('✅ Original AST converted to tree format');
                 } catch (e) {
                     console.warn('⚠️ Could not format original AST:', e.message);
@@ -756,48 +760,6 @@ class TranslationUIManager {
             console.error('Stack:', error.stack);
             // Don't rethrow - just log
         }
-    }
-
-    /**
-     * Display interpretation phase comparison
-     */
-    displayInterpretationComparison(originalResult, translatedResult) {
-        const sourceLanguage = this.currentTranslation?.sourceLanguage || '';
-        
-        // Original C/Python code cannot be executed in browser - show informational message
-        let originalOutput = '';
-        if (sourceLanguage.toLowerCase() === 'c' || sourceLanguage.toLowerCase() === 'cpp' || sourceLanguage.toLowerCase() === 'c++') {
-            originalOutput = `⚠️ C/C++ code cannot be executed in the browser.\nThe code has been lexically and syntactically analyzed above.\nUse a C compiler (gcc, clang) to execute the original code.`;
-        } else if (sourceLanguage.toLowerCase() === 'python') {
-            originalOutput = `⚠️ Python code execution is not available in the browser.\nUse Python interpreter to run the original code.`;
-        } else {
-            originalOutput = String(originalResult.output || '').substring(0, 500);
-        }
-
-        const translatedOutput = String(translatedResult.output || '').substring(0, 500);
-
-        document.getElementById('originalOutputDisplay').textContent = originalOutput || '[No output]';
-        document.getElementById('translatedOutputDisplay').textContent = translatedOutput || '[No output]';
-
-        const comparisonHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <span class="text-gray-400">Original Status:</span>
-                    <span class="text-yellow-400 font-semibold">⚠️ Cannot execute</span>
-                </div>
-                <div>
-                    <span class="text-gray-400">Translated Status:</span>
-                    <span class="text-blue-400 font-semibold">${translatedResult.success ? '✅ Success' : '❌ Error'}</span>
-                </div>
-                <div colspan="2" class="md:col-span-2">
-                    <span class="text-gray-400">Status:</span>
-                    <span class="text-blue-400 font-semibold">
-                        ℹ️ Original code analyzed at lexing/parsing phase. Translated code executed above.
-                    </span>
-                </div>
-            </div>
-        `;
-        document.getElementById('outputComparison').innerHTML = comparisonHTML;
     }
 
     /**

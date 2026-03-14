@@ -682,89 +682,177 @@ class GenericASTBuilder {
 
         let result = '';
         const prefix = isLast ? '└── ' : '├── ';
-        const extender = isLast ? '    ' : '│   ';
+        const connector = isLast ? '    ' : '│   ';
 
-        // Format based on node type
-        if (node.type === 'Program') {
-            result += `Program\n`;
+        // Start with Program node
+        if (!indent && node.type === 'Program') {
+            result += 'Program\n';
             if (node.body && node.body.length > 0) {
                 node.body.forEach((child, index) => {
                     const isLastChild = index === node.body.length - 1;
-                    result += this.formatAsTree(child, indent + (isLast ? '' : '│   '), isLastChild, 'Program');
+                    result += this.formatAsTree(child, '', isLastChild);
                 });
             }
-        } else if (node.type === 'PreprocessorDirective') {
-            result += `${indent}${prefix}Include: ${node.directive}\n`;
-        } else if (node.type === 'FunctionDefinition') {
-            const returnType = node.returnType ? node.returnType + ' ' : '';
-            result += `${indent}${prefix}FunctionDef: ${returnType}${node.name}\n`;
-            if (node.body && node.body.length > 0) {
-                node.body.forEach((child, index) => {
-                    const isLastChild = index === node.body.length - 1;
-                    const childPrefix = isLastChild ? '└── ' : '├── ';
-                    result += this.formatAsTree(child, indent + (isLast ? '    ' : '│   '), isLastChild, 'FunctionDefinition');
-                });
-            }
-        } else if (node.type === 'VariableDeclaration') {
-            let displayStr = `Expression: ${node.dataType ? node.dataType + ' ' : ''}${node.name}`;
-            if (node.initializer) {
-                displayStr += ' = ...';
-            }
-            displayStr += ';';
-            result += `${indent}${prefix}${displayStr}\n`;
-        } else if (node.type === 'ExpressionStatement') {
-            if (node.expression) {
-                const exprStr = this.formatExpression(node.expression);
-                result += `${indent}${prefix}Expression: ${exprStr};\n`;
-            } else {
-                result += `${indent}${prefix}Expression: ...;\n`;
-            }
-        } else if (node.type === 'FunctionCall') {
-            const args = node.arguments ? `(${node.arguments.length} args)` : '()';
-            result += `${indent}${prefix}Statement: ${node.name}${args};\n`;
-        } else if (node.type === 'IfStatement') {
-            result += `${indent}${prefix}IfStatement\n`;
-            if (node.thenBody && node.thenBody.length > 0) {
-                node.thenBody.forEach((child, index) => {
-                    const isLastChild = index === node.thenBody.length - 1 && (!node.elseBody || node.elseBody.length === 0);
-                    result += this.formatAsTree(child, indent + (isLast ? '    ' : '│   '), isLastChild, 'IfStatement');
-                });
-            }
-            if (node.elseBody && node.elseBody.length > 0) {
-                node.elseBody.forEach((child, index) => {
-                    const isLastChild = index === node.elseBody.length - 1;
-                    result += this.formatAsTree(child, indent + (isLast ? '    ' : '│   '), isLastChild, 'IfStatement');
-                });
-            }
-        } else if (node.type === 'ForStatement') {
-            result += `${indent}${prefix}Expression: for(...) {\n`;
-            if (node.body && node.body.length > 0) {
-                node.body.forEach((child, index) => {
-                    const isLastChild = index === node.body.length - 1;
-                    result += this.formatAsTree(child, indent + (isLast ? '    ' : '│   '), isLastChild, 'ForStatement');
-                });
-            }
-        } else if (node.type === 'WhileStatement') {
-            result += `${indent}${prefix}WhileStatement\n`;
-            if (node.body && node.body.length > 0) {
-                node.body.forEach((child, index) => {
-                    const isLastChild = index === node.body.length - 1;
-                    result += this.formatAsTree(child, indent + (isLast ? '    ' : '│   '), isLastChild, 'WhileStatement');
-                });
-            }
-        } else if (node.type === 'ReturnStatement') {
-            result += `${indent}${prefix}Return: return`;
-            if (node.argument) {
-                result += ` ${this.formatExpression(node.argument)}`;
-            }
-            result += ';\n';
-        } else if (node.type === 'PrintStatement') {
-            result += `${indent}${prefix}Statement: print(...);\n`;
-        } else {
-            result += `${indent}${prefix}${node.type}\n`;
+            return result;
+        }
+
+        // For non-Program nodes
+        let nodeLabel = '';
+        let children = [];
+
+        switch (node.type) {
+            case 'Preprocessor':
+            case 'PreprocessorDirective':
+                nodeLabel = `Include: ${node.value || node.directive || '#include ...'}`;
+                break;
+
+            case 'VariableDeclaration':
+                nodeLabel = `Expression: ${node.dataType || 'auto'} ${node.name}`;
+                if (node.initializer) {
+                    nodeLabel += ' = ' + this.formatExpressionShort(node.initializer);
+                }
+                nodeLabel += ';';
+                break;
+
+            case 'PrintStatement':
+                const func = node.function || 'print';
+                nodeLabel = `Statement: ${func}(${node.arguments ? node.arguments.length : 0});`;
+                break;
+
+            case 'FunctionCall':
+                nodeLabel = `Statement: ${node.name}(${node.arguments ? node.arguments.length : 0});`;
+                break;
+
+            case 'Assignment':
+            case 'AssignmentExpression':
+                if (node.target?.name) {
+                    nodeLabel = `Expression: ${node.target.name} ${node.operator || '='} ...;`;
+                } else if (node.left?.name) {
+                    nodeLabel = `Expression: ${node.left.name} ${node.operator || '='} ...;`;
+                } else {
+                    nodeLabel = `Assignment`;
+                }
+                break;
+
+            case 'ExpressionStatement':
+                if (node.expression) {
+                    const exprStr = this.formatExpressionShort(node.expression);
+                    nodeLabel = `Expression: ${exprStr};`;
+                } else {
+                    nodeLabel = `Expression: ...;`;
+                }
+                break;
+
+            case 'IfStatement':
+                nodeLabel = `Expression: if(...) {`;
+                if (node.consequent) {
+                    children.push({ node: node.consequent, label: null, isIf: true });
+                }
+                if (node.elseBody && node.elseBody.length > 0) {
+                    children.push({ label: '} else {', isElse: true, body: node.elseBody });
+                } else if (node.alternate) {
+                    children.push({ node: node.alternate, label: null, isElse: true });
+                }
+                break;
+
+            case 'WhileStatement':
+            case 'jabtak': 
+                nodeLabel = `Expression: while(...) {`;
+                if (node.body) {
+                    children.push({ node: node.body, isBlock: true });
+                }
+                break;
+
+            case 'ForStatement':
+                nodeLabel = `Expression: for(...) {`;
+                if (node.body && node.body.length > 0) {
+                    children = node.body.map(n => ({ node: n }));
+                }
+                break;
+
+            case 'BlockStatement':
+                if (node.body && node.body.length > 0) {
+                    children = node.body.map(n => ({ node: n }));
+                }
+                break;
+
+            case 'ReturnStatement':
+                nodeLabel = `Return: return`;
+                if (node.value) {
+                    nodeLabel += ` ${this.formatExpressionShort(node.value)}`;
+                }
+                nodeLabel += ';';
+                break;
+
+            case 'FunctionDefinition':
+                nodeLabel = `FunctionDef: ${node.returnType || 'void'} ${node.name}()`;
+                if (node.body) {
+                    if (node.body.statements && node.body.statements.length > 0) {
+                        children = node.body.statements.map(n => ({ node: n }));
+                    } else if (node.body.body && node.body.body.length > 0) {
+                        children = node.body.body.map(n => ({ node: n }));
+                    }
+                }
+                break;
+
+            default:
+                if (node.name) {
+                    nodeLabel = `${node.type}: ${node.name}`;
+                } else {
+                    nodeLabel = node.type;
+                }
+        }
+
+        // Format the node
+        result += indent + prefix + nodeLabel + '\n';
+
+        // Format children
+        if (children.length > 0) {
+            children.forEach((child, idx) => {
+                const isLastChild = idx === children.length - 1;
+                const childConnector = isLastChild ? '    ' : '│   ';
+                
+                if (child.label) {
+                    // Direct label (like } else {)
+                    result += indent + connector + (isLastChild ? '└── ' : '├── ') + child.label + '\n';
+                    if (child.body && child.body.length > 0) {
+                        child.body.forEach((stmt, sidx) => {
+                            const isLastStmt = sidx === child.body.length - 1;
+                            result += this.formatAsTree(stmt, indent + connector + childConnector, isLastStmt);
+                        });
+                    }
+                } else if (child.node) {
+                    // Recursive node formatting
+                    result += this.formatAsTree(child.node, indent + connector, isLastChild);
+                }
+            });
+
+            // Add closing brace
+            result += indent + connector + '└── }\n';
         }
 
         return result;
+    }
+
+    /**
+     * Format expression for short display
+     */
+    formatExpressionShort(expr) {
+        if (!expr) return '...';
+
+        if (expr.type === 'Literal' || expr.type === 'NumberLiteral') {
+            return String(expr.value);
+        } else if (expr.type === 'StringLiteral') {
+            return `"${expr.value}"`;
+        } else if (expr.type === 'Identifier' || expr.type === 'Variable') {
+            return expr.name || '...';
+        } else if (expr.type === 'BinaryExpression') {
+            return `... ${expr.operator} ...`;
+        } else if (expr.type === 'FunctionCall' || expr.type === 'CallExpression') {
+            return `${expr.name || expr.callee?.name || 'func'}(...)`;
+        } else {
+            return '...';
+        }
     }
 
     /**
@@ -777,8 +865,8 @@ class GenericASTBuilder {
             return String(expr.value);
         } else if (expr.type === 'StringLiteral') {
             return `"${expr.value}"`;
-        } else if (expr.type === 'Identifier') {
-            return expr.name;
+        } else if (expr.type === 'Identifier' || expr.type === 'Variable') {
+            return expr.name || '...';
         } else if (expr.type === 'BinaryExpression') {
             return `${this.formatExpression(expr.left)} ${expr.operator} ${this.formatExpression(expr.right)}`;
         } else if (expr.type === 'FunctionCall') {
