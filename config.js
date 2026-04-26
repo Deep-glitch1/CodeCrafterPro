@@ -64,24 +64,6 @@ jabtak i <= 5 {
         }
     },
 
-    // Custom language keyword mapping
-    CUSTOM_KEYWORDS: {
-        declare: "maano",
-        print: "likho",
-        "if": "agar",
-        "else": "warna",
-        "while": "jabtak"
-    },
-    
-    // AI Settings
-    AI: {
-        enabled: true,
-        apiKey: null, // Set your API key here
-        model: "gpt-3.5-turbo",
-        maxTokens: 500,
-        temperature: 0.7
-    },
-
     // Custom Language Keywords
     CUSTOM_KEYWORDS: {
         declare: "maano",

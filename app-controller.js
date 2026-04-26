@@ -1,13 +1,10 @@
-// app-controller.js
-// Application controller (extracted from main.js)
-
 class CodeCrafterApp {
     constructor() {
         this.currentMode = 'c';
         this.customCompiler = null;
         this.cCompiler = null;
         this.pythonCompiler = null;
-        this.aiAssistant = null;
+        // REMOVED: this.aiAssistant = null;
         this.keywordConfig = this.getDefaultKeywordConfig();
         this.editorManager = new window.EditorManager({
             markerOwner: 'codecrafter',
@@ -127,9 +124,9 @@ agar age >= 18 {
         this.cCompiler = new CCompiler();
         this.pythonCompiler = new PythonCompiler();
 
-        // Initialize AI Assistant
-        this.aiAssistant = new AIAssistant();
-        window.aiAssistant = this.aiAssistant;
+        // REMOVED: AI Assistant initialization
+        // this.aiAssistant = new AIAssistant();
+        // window.aiAssistant = this.aiAssistant;
 
         // Set initial mode
         this.changeCompilerMode('c');

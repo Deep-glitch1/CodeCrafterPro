@@ -1,9 +1,6 @@
 // ui-actions.js
 // UI helpers and global action wrappers
 
-function toggleBot() {
-    document.getElementById('botPanel').classList.toggle('open');
-}
 
 function showOutputTab(tabId) {
     // Update tabs

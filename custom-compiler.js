@@ -247,7 +247,8 @@ class CustomLanguageCompiler {
 
             const interpretStart = performance.now();
             const runtime = new RealTimeCompiler(this.keywordConfig);
-            const output = runtime.interpret(ast);
+            
+            const output = runtime.compile(ast); 
             timing.interpret = performance.now() - interpretStart;
 
             // Format AST as tree for hierarchical display

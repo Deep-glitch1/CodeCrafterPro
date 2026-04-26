@@ -59,16 +59,12 @@
                     <i class="fas fa-code mr-2"></i>CodeCrafter Pro
                 </h1>
                 <p class="hidden md:block text-gray-300 text-lg font-medium">
-                    Complete Compiler Suite with AI
+                    Complete Compiler Suite
                 </p>
                 <div class="flex items-center gap-4">
                     <button id="translatorToggle" onclick="translationUIManager?.openTranslatorModal()" 
                             class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-xl border border-white/20 backdrop-blur-sm hover:shadow-lg hover:scale-105 transition-all duration-300">
                         <i class="fas fa-language mr-2"></i>Translator
-                    </button>
-                    <button id="botToggle" onclick="toggleBot()" 
-                            class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-xl border border-white/20 backdrop-blur-sm hover:shadow-lg hover:scale-105 transition-all duration-300">
-                        <i class="fas fa-robot mr-2"></i>AI Assistant
                     </button>
                     <div class="relative group">
                         <select id="compilerMode" onchange="changeCompilerMode()"
@@ -161,23 +157,28 @@
             <div class="grid md:grid-cols-5 gap-4">
                 <div>
                     <label class="text-gray-300 text-sm">Declare</label>
-                    <input id="kwDeclareInput" type="text" placeholder="maano" />
+                    <input id="kwDeclareInput" type="text" placeholder="maano" 
+                           class="w-full bg-gray-900/70 text-white p-3 rounded-xl border border-gray-600/50" />
                 </div>
                 <div>
                     <label class="text-gray-300 text-sm">Print</label>
-                    <input id="kwPrintInput" type="text" placeholder="likho" />
+                    <input id="kwPrintInput" type="text" placeholder="likho" 
+                           class="w-full bg-gray-900/70 text-white p-3 rounded-xl border border-gray-600/50" />
                 </div>
                 <div>
                     <label class="text-gray-300 text-sm">If</label>
-                    <input id="kwIfInput" type="text" placeholder="agar" />
+                    <input id="kwIfInput" type="text" placeholder="agar" 
+                           class="w-full bg-gray-900/70 text-white p-3 rounded-xl border border-gray-600/50" />
                 </div>
                 <div>
                     <label class="text-gray-300 text-sm">Else</label>
-                    <input id="kwElseInput" type="text" placeholder="warna" />
+                    <input id="kwElseInput" type="text" placeholder="warna" 
+                           class="w-full bg-gray-900/70 text-white p-3 rounded-xl border border-gray-600/50" />
                 </div>
                 <div>
                     <label class="text-gray-300 text-sm">While</label>
-                    <input id="kwWhileInput" type="text" placeholder="jabtak" />
+                    <input id="kwWhileInput" type="text" placeholder="jabtak" 
+                           class="w-full bg-gray-900/70 text-white p-3 rounded-xl border border-gray-600/50" />
                 </div>
             </div>
             <div class="mt-4 flex items-center gap-3 flex-wrap">
@@ -252,39 +253,6 @@
         </div>
     </div>
 
-    <!-- AI Bot Panel -->
-    <div id="botPanel">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold text-purple-300">
-                <i class="fas fa-robot mr-2"></i>AI Code Assistant
-            </h3>
-            <button onclick="toggleBot()" class="text-gray-400 hover:text-white">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <textarea id="nlPrompt" placeholder="Describe your logic or what you want to code..."></textarea>
-        
-        <div class="bot-actions">
-            <button onclick="startVoiceInput()">
-                <i class="fas fa-microphone mr-2"></i>Voice Input
-            </button>
-            <button onclick="generateCodeFromPrompt()">
-                <i class="fas fa-bolt mr-2"></i>Generate Code
-            </button>
-        </div>
-        
-        <div class="mt-4">
-            <h4 class="text-white mb-2"><i class="fas fa-star mr-2"></i>AI Features:</h4>
-            <ul class="text-gray-300 text-sm space-y-1">
-                <li><i class="fas fa-check text-green-400 mr-2"></i>Natural language to C/C++ code</li>
-                <li><i class="fas fa-check text-green-400 mr-2"></i>Code optimization suggestions</li>
-                <li><i class="fas fa-check text-green-400 mr-2"></i>Bug detection and fixes</li>
-                <li><i class="fas fa-check text-green-400 mr-2"></i>Learning resources</li>
-            </ul>
-        </div>
-    </div>
-
     <!-- Scripts -->
     <script src="config.js"></script>
     <script src="enhanced-lexer.js"></script>
@@ -296,7 +264,6 @@
     <script src="custom-compiler.js"></script>
     <script src="c-compiler.js"></script>
     <script src="python-compiler.js"></script>
-    <script src="ai-assistant.js"></script>
     <script src="editor-manager.js"></script>
     <script src="output-manager.js"></script>
     <script src="stats-manager.js"></script>

@@ -839,7 +839,7 @@ class TranslationUIManager {
             document.getElementById(viewMap[tabName]).style.display = 'block';
         }
 
-        if (event?.target) {
+        if (event && event.target) {
             event.target.closest('.translationTab')?.classList.remove('text-gray-300');
             event.target.closest('.translationTab')?.classList.add('bg-purple-600/50', 'border-b-2', 'border-purple-500', 'text-white');
         }
