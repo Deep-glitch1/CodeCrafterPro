@@ -8,19 +8,11 @@ class EditorManager {
         this.markerOwner = options.markerOwner || 'codecrafter';
         this.currentModeGetter = options.getCurrentMode || null;
         this.breakpoints = {
-            main: new Set(),
-            c: new Set(),
-            custom: new Set()
+            main: new Set()
         };
         this.breakpointDecorations = {
-            main: [],
-            c: [],
-            custom: []
+            main: []
         };
-    }
-
-    setCurrentModeGetter(getter) {
-        this.currentModeGetter = getter;
     }
 
     getCurrentMode() {
@@ -43,30 +35,6 @@ class EditorManager {
                     scrollBeyondLastLine: false,
                     automaticLayout: true
                 });
-
-                const cEditorEl = document.getElementById('cEditor');
-                if (cEditorEl) {
-                    this.editors.c = monaco.editor.create(cEditorEl, {
-                        value: CONFIG.COMPILERS.C.defaultCode,
-                        language: 'c',
-                        theme: 'vs-dark',
-                        fontSize: 13,
-                        glyphMargin: true,
-                        minimap: { enabled: false }
-                    });
-                }
-
-                const customEditorEl = document.getElementById('customEditor');
-                if (customEditorEl) {
-                    this.editors.custom = monaco.editor.create(customEditorEl, {
-                        value: CONFIG.COMPILERS.CUSTOM.defaultCode,
-                        language: 'plaintext',
-                        theme: 'vs-dark',
-                        fontSize: 13,
-                        glyphMargin: true,
-                        minimap: { enabled: false }
-                    });
-                }
 
                 this.currentEditor = this.editors.main;
                 window.currentEditor = this.currentEditor;
@@ -93,18 +61,6 @@ class EditorManager {
             const mode = currentMode === 'custom' ? 'custom' : (currentMode === 'python' ? 'python' : 'c');
             save(mode, this.editors.main.getValue());
         });
-
-        if (this.editors.c) {
-            this.editors.c.onDidChangeModelContent(() => {
-                save('both_c', this.editors.c.getValue());
-            });
-        }
-
-        if (this.editors.custom) {
-            this.editors.custom.onDidChangeModelContent(() => {
-                save('both_custom', this.editors.custom.getValue());
-            });
-        }
     }
 
     restoreSavedCode() {
@@ -117,12 +73,6 @@ class EditorManager {
         };
 
         this.editors.main.setValue(load('c', CONFIG.COMPILERS.C.defaultCode));
-        if (this.editors.c) {
-            this.editors.c.setValue(load('both_c', CONFIG.COMPILERS.C.defaultCode));
-        }
-        if (this.editors.custom) {
-            this.editors.custom.setValue(load('both_custom', CONFIG.COMPILERS.CUSTOM.defaultCode));
-        }
     }
 
     setupBreakpointHandling() {
@@ -140,8 +90,6 @@ class EditorManager {
         };
 
         attach('main');
-        if (this.editors.c) attach('c');
-        if (this.editors.custom) attach('custom');
     }
 
     toggleBreakpoint(editorKey, lineNumber) {
